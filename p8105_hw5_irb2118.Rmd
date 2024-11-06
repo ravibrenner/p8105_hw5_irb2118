@@ -158,5 +158,51 @@ all_sim_plot + rej_sim_plot
 
 
 ## Problem 3
+This problem uses data fram a Washington Post GitHub repo, which can be found [here](https://github.com/washingtonpost/data-homicides).
+
+The Washington Post has gathered data on homicides in 50 large U.S. cities and made the data available through a GitHub repository here. You can read their accompanying article here.
+
+
+First we will import the data.
+```{r}
+homicide_df <- read_csv("data/homicide-data.csv") 
+```
+
+Inspecting the data, it looks like the analysts who created it already had it in a clean and tidy format. There are `r nrow(homicide_df)` rows and `r ncol(homicide_df)` columns. There are columns for report date, the victim's name and demographic information, the city, state, latitude/longitude, and the disposition (i.e. the outcome of the investigation into the homicide).
+
+Now, we can manipulate the data to learn more about the unsolved homicides. I will create a `city_state` variable, then summarize along that variable to get total homicides and total unsolves homicides (those with disposition “Closed without arrest” or “Open/No arrest”).
+
+```{r}
+city_df <- homicide_df |>
+  mutate(city_state = str_c(city,", ", state),
+         unsolved = if_else(disposition == "Closed by arrest", FALSE, TRUE)) |>
+  group_by(city_state) |>
+  summarize(total_homicides = n(),
+            total_unsolved = sum(unsolved))
+```
+
+Looking at one city, Baltimore, MD, I can use `prop.test` to estimate the proportion that are unsolved
+```{r}
+baltimore_prop <- city_df |>
+  filter(city_state == "Baltimore, MD") |>
+  select(-city_state) |>
+  as.matrix() |>
+  prop.test() 
+
+broom::tidy(baltimore_prop) |>
+  select(estimate, conf.low, conf.high)
+```
+
+We can turn this into one continuous pipeline, and apply it to each city in the dataframe using `map`
+
+```{r}
+
+
+```
+
+Now run prop.test for each of the cities in your dataset, and extract both the proportion of unsolved homicides and the confidence interval for each. Do this within a “tidy” pipeline, making use of purrr::map, purrr::map2, list columns and unnest as necessary to create a tidy dataframe with estimated proportions and CIs for each city.
+
+Create a plot that shows the estimates and CIs for each city – check out geom_errorbar for a way to add error bars based on the upper and lower limits. Organize cities according to the proportion of unsolved homicides.
+
 
 # Conclusion
