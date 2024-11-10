@@ -28,8 +28,17 @@ scale_fill_discrete = scale_fill_viridis_d
 ```
 
 # Introduction
+This homework assignment will cover a few different ways to iterate through variables to write more efficient data analysis pipelines in R.
 
 # Methods
+The data for this problem are created via simulation, and from a dataset available [here](https://github.com/washingtonpost/data-homicides).
+
+NEED TO DO
+* Improve write up for all 3 problems
+* Silence display of warnings in knit document
+* work on viz on problem 2
+* fix output of viz in problem 3
+* Go through HW webpage, ensure we have met all requirements correctly
 
 # Problems
 
@@ -92,7 +101,7 @@ norm_samp(mu = 0)
 Now we can generate 5000 datasets from this model with $\mu = 0$, and save the results.
 ```{r}
 sim_results_df <- 
-  tibble(iter = 1:5000,
+  tibble(iter = 1:500,
          mu = 0) |>
   mutate(results = map(mu, norm_samp)) |>
   unnest(results)
@@ -101,7 +110,7 @@ sim_results_df <-
 We can further extend this to values of $\mu$ from 1 to 6:
 ```{r}
 sim_results_df <-
-  expand_grid(iter = 1:5000, 
+  expand_grid(iter = 1:500, 
               mu = 0:6) |>
   mutate(results = map(mu, norm_samp)) |>
   unnest(results)
@@ -162,7 +171,6 @@ This problem uses data fram a Washington Post GitHub repo, which can be found [h
 
 The Washington Post has gathered data on homicides in 50 large U.S. cities and made the data available through a GitHub repository here. You can read their accompanying article here.
 
-
 First we will import the data.
 ```{r}
 homicide_df <- read_csv("data/homicide-data.csv") 
@@ -185,24 +193,43 @@ Looking at one city, Baltimore, MD, I can use `prop.test` to estimate the propor
 ```{r}
 baltimore_prop <- city_df |>
   filter(city_state == "Baltimore, MD") |>
-  select(-city_state) |>
-  as.matrix() |>
-  prop.test() 
+  mutate(result = map2(total_unsolved, total_homicides, \(x,y) prop.test(x,y)))
 
-broom::tidy(baltimore_prop) |>
-  select(estimate, conf.low, conf.high)
+baltimore_prop |>
+  mutate(result_tbl = map(result, broom::tidy)) |>
+  unnest(result_tbl) |>
+  select(city_state, total_homicides, total_unsolved, 
+         estimate, conf.low, conf.high)
 ```
 
-We can turn this into one continuous pipeline, and apply it to each city in the dataframe using `map`
+We can turn this into one continuous pipeline, and apply it to each city in the dataframe:
 
 ```{r}
+city_estimates <- city_df |>
+  mutate(result = map2(total_unsolved, total_homicides, \(x,y) prop.test(x,y))) |>
+  mutate(result_tbl = map(result, broom::tidy)) |>
+  unnest(result_tbl) |>
+  select(city_state, total_homicides, total_unsolved, 
+         estimate, conf.low, conf.high)
 
-
+head(city_estimates)
 ```
 
-Now run prop.test for each of the cities in your dataset, and extract both the proportion of unsolved homicides and the confidence interval for each. Do this within a “tidy” pipeline, making use of purrr::map, purrr::map2, list columns and unnest as necessary to create a tidy dataframe with estimated proportions and CIs for each city.
+Now for each city, we can see the estimated proportion and 95% confidence interval for of unsolved homicides.
 
-Create a plot that shows the estimates and CIs for each city – check out geom_errorbar for a way to add error bars based on the upper and lower limits. Organize cities according to the proportion of unsolved homicides.
+We can visualize this data in a plot:
+```{r}
+city_estimates |>
+  mutate(city_state = fct_infreq(city_state, w = estimate)) |>
+  ggplot(aes(y = city_state, x = estimate)) + 
+  geom_point() + 
+  geom_errorbar(aes(xmin = conf.low, xmax = conf.high)) +
+  labs(x = "Proportion of unsolved homicides",
+       y = "City and State")
+```
 
+With the exception of Tulsa, AL (which has just one homicide in this dataset), the confidence bands are relatively narrow, and cities range in proportion of unsolved homicides from about 25% to 75%
 
 # Conclusion
+
+This homework showcased several ways to use `map` functions to loop through many columns of a dataset easily in only a few lines of code.
