@@ -206,7 +206,7 @@ head(city_estimates)
 Now for each city, we can see the estimated proportion and 95% confidence interval for of unsolved homicides.
 
 We can visualize this data in a plot:
-```{r}
+```{r, fig.asp=0.8}
 city_estimates |>
   mutate(city_state = fct_infreq(city_state, w = estimate)) |>
   ggplot(aes(y = city_state, x = estimate)) + 
@@ -214,7 +214,7 @@ city_estimates |>
   geom_errorbar(aes(xmin = conf.low, xmax = conf.high)) +
   labs(x = "Proportion of unsolved homicides",
        y = "City and State") + 
-  theme(axis.text.y = element_text(size = 8))
+  theme(axis.text.y = element_text(size = 7))
 ```
 
 With the exception of Tulsa, AL (which has just one homicide in this dataset), the confidence bands are relatively narrow, and cities range in proportion of unsolved homicides from about 25% to 75%
