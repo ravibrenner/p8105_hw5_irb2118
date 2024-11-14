@@ -159,8 +159,6 @@ In all simulations, the average $\hat{\mu}$ value was close to the true value. I
 ## Problem 3
 This problem uses data fram a Washington Post GitHub repo, which can be found [here](https://github.com/washingtonpost/data-homicides).
 
-The Washington Post has gathered data on homicides in 50 large U.S. cities and made the data available through a GitHub repository here. You can read their accompanying article here.
-
 First we will import the data.
 ```{r}
 homicide_df <- read_csv("data/homicide-data.csv") 
